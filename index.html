@@ -10,6 +10,23 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
+
+       /* 1. Hide the cursor (for desktop) and disable interaction (for mobile/touch) */
+        body {
+            cursor: none;             /* Hides the mouse arrow */
+            pointer-events: none;     /* DISOPABLES ALL CLICKS AND TAPS */
+            user-select: none;        /* Prevents highlighting text */
+            -webkit-user-select: none; /* Safari/Chrome specific */
+            touch-action: none;       /* Disables browser zooming/panning gestures */
+        }
+        
+        /* 2. Re-enable interaction when the Pranked screen appears */
+        #screen5 {
+            cursor: auto;             /* Brings the mouse back */
+            pointer-events: auto;     /* RE-ENABLES CLICKS AND TAPS */
+            touch-action: auto;       /* Re-enables gestures */
+        }
+        
         :root {
             --android-green: #3ddc84;
             --android-blue: #4285f4;
