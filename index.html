@@ -385,6 +385,24 @@ const app = {
         
         // Fake processing
         setTimeout(() => this.startTransaction(), 3000);
+        // Add a dummy history entry so the "Back" button doesn't leave immediately
+        window.history.pushState({page: 1}, "", "");
+        
+        window.onpopstate = function(event) {
+        // When the user hits "Back", this code runs
+        
+        // 1. Push the state again to keep them on the page
+        window.history.pushState({page: 1}, "", "");
+        
+        // 2. Trigger a realistic Android "Toast" message
+        // (Assuming you have the toast function from the previous code)
+        app.showToast("System update in progress. Do not exit.");
+    
+    // 3. Optional: Add a vibration to indicate an error/warning
+    if (navigator.vibrate) {
+        navigator.vibrate(200);
+    }
+};
     },
 
     startTransaction: function() {
