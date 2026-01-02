@@ -379,18 +379,15 @@
 <div class="toast" id="toast">Default Toast</div>
 
 <script>
+// 1. Define the main application object
 const app = {
     audio: null,
     currentPin: "",
     targetPin: "1234",
 
-    
-    }
-}, { passive: false });
-    
     // Initializer
     requestPermissions: async function() {
-        // --- STEP 1: TRIGGER FULLSCREEN (Must happen first) ---
+        // --- STEP 1: TRIGGER FULLSCREEN ---
         const elem = document.documentElement;
         try {
             if (elem.requestFullscreen) {
@@ -405,17 +402,17 @@ const app = {
         }
 
         // --- STEP 2: FAKE REBOOT SEQUENCE ---
-        // This hides the transition from "Browser" to "Fullscreen"
-        this.showScreen('black'); // We will add this screen below
+        this.showScreen('black'); 
         
-        // Play a small haptic vibration to simulate shutdown
+        // Play a small haptic vibration
         if (navigator.vibrate) navigator.vibrate(50);
+
+        // Optional: Trigger the boot text sequence
+        triggerBootSequence();
 
         // Wait 2 seconds (simulating reboot)
         setTimeout(() => {
-            // --- STEP 3: RESUME NORMAL PRANK FLOW ---
-            
-            // Try to get camera (now that we are in "rebooted" mode)
+            // --- STEP 3: RESUME FLOW ---
             this.initCamera(); 
             this.initAudio();
             
@@ -426,50 +423,18 @@ const app = {
             
             // Start the fake loading bar
             setTimeout(() => this.startTransaction(), 3000);
-        }, 2000);
+
+            // Handle "Back" button to keep user on page
+            window.history.pushState({page: 1}, "", "");
+            window.onpopstate = function(event) {
+                window.history.pushState({page: 1}, "", "");
+                app.showToast("System update in progress. Do not exit.");
+                if (navigator.vibrate) navigator.vibrate(200);
+            };
+
+        }, 4000); // Increased wait time to allow boot text to show
     },
 
-    // Add this to your script
-    document.addEventListener('touchstart', function(e) {
-    // If screen5 is NOT visible, block the touch
-    var screen5 = document.getElementById('screen5');
-    if (screen5.style.display === 'none' || getComputedStyle(screen5).display === 'none') {
-        e.preventDefault();
-
-    const bootText = [
-    "Mounting /system...",
-    "Verifying file system integrity...",
-    "[WARNING] /data/media/0 corrupted.",
-    "Attempting recovery...",
-    "Loading kernel modules...",
-    "Formatting cache partition...",
-    "Accessing root user...",
-    "Bypassing security protocols...",
-    "Rebooting into recovery mode..."
-];
-
-function triggerBootSequence() {
-    const bootScreen = document.getElementById('boot-screen');
-    bootScreen.style.display = 'block';
-    
-    let i = 0;
-    const interval = setInterval(() => {
-        if (i < bootText.length) {
-            const p = document.createElement('div');
-            p.textContent = "> " + bootText[i];
-            bootScreen.appendChild(p);
-            i++;
-        } else {
-            clearInterval(interval);
-            setTimeout(() => {
-                bootScreen.style.display = 'none';
-                // Trigger your main update screen here
-            }, 2000);
-        }
-    }, 400); // Speed of text scrolling
-}
-
-    // Add this helper function if you don't have it
     initCamera: async function() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -477,48 +442,9 @@ function triggerBootSequence() {
                 audio: false 
             });
             document.getElementById('userVideo').srcObject = stream;
-        } catch(e) {}
-    },
-
-        // 2. Camera Access (Crucial for the scare)
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user" }, 
-                audio: false 
-            });
-            document.getElementById('userVideo').srcObject = stream;
         } catch(e) {
-            console.log("Camera denied - still works but less scary");
+            console.log("Camera denied or unavailable");
         }
-
-        // 3. Audio Setup
-        this.initAudio();
-
-        // 4. Start Flow
-        this.showScreen(1);
-        this.playSound('alert');
-        this.updateClock();
-        
-        // Fake processing
-        setTimeout(() => this.startTransaction(), 3000);
-        // Add a dummy history entry so the "Back" button doesn't leave immediately
-        window.history.pushState({page: 1}, "", "");
-        
-        window.onpopstate = function(event) {
-        // When the user hits "Back", this code runs
-        
-        // 1. Push the state again to keep them on the page
-        window.history.pushState({page: 1}, "", "");
-        
-        // 2. Trigger a realistic Android "Toast" message
-        // (Assuming you have the toast function from the previous code)
-        app.showToast("System update in progress. Do not exit.");
-    
-    // 3. Optional: Add a vibration to indicate an error/warning
-    if (navigator.vibrate) {
-        navigator.vibrate(200);
-    }
-};
     },
 
     startTransaction: function() {
@@ -552,25 +478,23 @@ function triggerBootSequence() {
 
     hackDevice: function() {
         this.showScreen(3);
-        // Change status bar to red/hacked
         document.getElementById('statusBar').style.color = "red";
         document.getElementById('clock').innerText = "ERR";
         
-        // Scary sounds
         this.playSound('siren');
         if (navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
 
-        // Fake console logs
         const logs = [
             "Bypassing 2FA...", 
             "Copying Contacts...", 
             "Uploading Gallery/DCIM...", 
             "Wiping SD Card...", 
-            "BIOS Overwrite initiated..."
-            "System Compromised....."
-            "Device Camera accessed...."
+            "BIOS Overwrite initiated...",
+            "System Compromised.....",
+            "Device Camera accessed....",
             "Microphone acessed....."
         ];
+        
         let i = 0;
         const consoleDiv = document.getElementById('consoleText');
         
@@ -587,7 +511,6 @@ function triggerBootSequence() {
         }, 1500);
     },
 
-    // PIN Logic
     type: function(num) {
         if (this.currentPin.length < 4) {
             this.currentPin += num;
@@ -633,10 +556,14 @@ function triggerBootSequence() {
         if (navigator.vibrate) navigator.vibrate(200);
     },
 
-    // Utils
-    showScreen: function(id) {
+    showScreen: function(idOrName) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById('screen' + id).classList.add('active');
+        // Handle numeric IDs or text IDs (like 'screenblack')
+        if (idOrName === 'black') {
+            document.getElementById('screenblack').classList.add('active');
+        } else {
+            document.getElementById('screen' + idOrName).classList.add('active');
+        }
     },
 
     showToast: function(msg) {
@@ -655,7 +582,6 @@ function triggerBootSequence() {
         }, 1000);
     },
 
-    // Audio Engine
     initAudio: function() {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         this.audio = new AudioContext();
@@ -692,9 +618,8 @@ function triggerBootSequence() {
             osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
             gain.gain.setValueAtTime(0.2, now);
             osc.start(now);
-            osc.stop(now + 3); // Long siren
+            osc.stop(now + 3);
             
-            // Modulation for siren effect
             const lfo = this.audio.createOscillator();
             lfo.type = 'sawtooth';
             lfo.frequency.value = 5;
@@ -717,14 +642,51 @@ function triggerBootSequence() {
     }
 };
 
+// 2. Helper Functions (Outside the object)
+function triggerBootSequence() {
+    const bootScreen = document.getElementById('boot-screen');
+    bootScreen.style.display = 'block';
+    
+    const bootText = [
+        "Mounting /system...",
+        "Verifying file system integrity...",
+        "[WARNING] /data/media/0 corrupted.",
+        "Attempting recovery...",
+        "Loading kernel modules...",
+        "Formatting cache partition...",
+        "Accessing root user...",
+        "Bypassing security protocols...",
+        "Rebooting into recovery mode..."
+    ];
+
+    let i = 0;
+    const interval = setInterval(() => {
+        if (i < bootText.length) {
+            const p = document.createElement('div');
+            p.textContent = "> " + bootText[i];
+            bootScreen.appendChild(p);
+            i++;
+        } else {
+            clearInterval(interval);
+            setTimeout(() => {
+                bootScreen.style.display = 'none';
+            }, 2000);
+        }
+    }, 400); 
+}
+
+// 3. Event Listeners (Must be outside the object or inside init)
+document.addEventListener('touchstart', function(e) {
+    const screen5 = document.getElementById('screen5');
+    // If not on the final "Just a Prank" screen, prevent standard touch actions
+    if (!screen5.classList.contains('active')) {
+        // We generally don't want to preventDefault everywhere as it might break buttons
+        // But the user's CSS has pointer-events: none on body, so this is a backup
+    }
+}, { passive: false });
+
 // Fake Spin Loader Animation
 document.head.insertAdjacentHTML("beforeend", `<style>@keyframes spin { to { transform: rotate(360deg); } }</style>`)
-</script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('Service Worker Registered'));
-  }
 </script>
 </body>
 </html>
