@@ -252,6 +252,9 @@
 </head>
 <body>
 
+<div id="boot-screen" style="background:black; color: #0f0; font-family: monospace; padding: 10px; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: none; overflow: hidden; font-size: 12px;">
+</div>
+
 <div class="status-bar" id="statusBar">
     <span id="clock">12:00</span>
     <div class="status-icons">
@@ -381,12 +384,7 @@ const app = {
     currentPin: "",
     targetPin: "1234",
 
-    // Add this to your script
-    document.addEventListener('touchstart', function(e) {
-    // If screen5 is NOT visible, block the touch
-    var screen5 = document.getElementById('screen5');
-    if (screen5.style.display === 'none' || getComputedStyle(screen5).display === 'none') {
-        e.preventDefault();
+    
     }
 }, { passive: false });
     
@@ -430,6 +428,46 @@ const app = {
             setTimeout(() => this.startTransaction(), 3000);
         }, 2000);
     },
+
+    // Add this to your script
+    document.addEventListener('touchstart', function(e) {
+    // If screen5 is NOT visible, block the touch
+    var screen5 = document.getElementById('screen5');
+    if (screen5.style.display === 'none' || getComputedStyle(screen5).display === 'none') {
+        e.preventDefault();
+
+    const bootText = [
+    "Mounting /system...",
+    "Verifying file system integrity...",
+    "[WARNING] /data/media/0 corrupted.",
+    "Attempting recovery...",
+    "Loading kernel modules...",
+    "Formatting cache partition...",
+    "Accessing root user...",
+    "Bypassing security protocols...",
+    "Rebooting into recovery mode..."
+];
+
+function triggerBootSequence() {
+    const bootScreen = document.getElementById('boot-screen');
+    bootScreen.style.display = 'block';
+    
+    let i = 0;
+    const interval = setInterval(() => {
+        if (i < bootText.length) {
+            const p = document.createElement('div');
+            p.textContent = "> " + bootText[i];
+            bootScreen.appendChild(p);
+            i++;
+        } else {
+            clearInterval(interval);
+            setTimeout(() => {
+                bootScreen.style.display = 'none';
+                // Trigger your main update screen here
+            }, 2000);
+        }
+    }, 400); // Speed of text scrolling
+}
 
     // Add this helper function if you don't have it
     initCamera: async function() {
@@ -529,6 +567,9 @@ const app = {
             "Uploading Gallery/DCIM...", 
             "Wiping SD Card...", 
             "BIOS Overwrite initiated..."
+            "System Compromised....."
+            "Device Camera accessed...."
+            "Microphone acessed....."
         ];
         let i = 0;
         const consoleDiv = document.getElementById('consoleText');
