@@ -1,2 +1,2 @@
 # android-sys-update
-Just a see the magic
+Just see the magic
