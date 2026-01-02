@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <title>System Update</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --android-green: #3ddc84;
+            --android-blue: #4285f4;
+            --android-red: #ea4335;
+            --dark-bg: #121212;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: black;
+            height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+
+        /* --- FAKE ANDROID STATUS BAR --- */
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 28px;
+            background: transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 14px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 9999;
+            color: #111; /* Dynamic change based on screen */
+            pointer-events: none;
+        }
+        .status-icons { display: flex; gap: 6px; align-items: center; }
+
+        /* --- CONTAINER --- */
+        .container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: white;
+            transition: background 0.3s;
+        }
+
+        .screen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+            padding: 24px;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        /* --- REALISTIC COMPONENTS --- */
+        .g-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 24px;
+        }
+
+        h2 { font-size: 22px; margin-bottom: 12px; font-weight: 400; text-align: center; }
+        p { font-size: 15px; color: #5f6368; text-align: center; line-height: 1.5; margin-bottom: 32px; }
+
+        .btn {
+            background: var(--android-blue);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 320px;
+            text-transform: uppercase;
+        }
+        .btn:active { background: #3367d6; }
+        .btn-text { background: transparent; color: var(--android-blue); box-shadow: none; margin-top: 10px; }
+
+        /* --- SCREEN 1: PLAY PROTECT FAKE --- */
+        .start-screen { background: #ffffff; justify-content: flex-start; padding-top: 80px; }
+        .shield-icon {
+            font-size: 64px;
+            color: var(--android-green);
+            margin-bottom: 20px;
+        }
+
+        /* --- SCREEN 2: BANK ALERT --- */
+        .alert-screen { background: #ffffff; }
+        .warning-box {
+            border: 2px solid var(--android-red);
+            border-radius: 8px;
+            padding: 20px;
+            background: #fff8f8;
+            width: 100%;
+        }
+
+        /* --- SCREEN 3: DRAINING --- */
+        .transaction-screen { background: #f1f3f4; justify-content: flex-start; padding-top: 60px; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .amount-big { font-size: 42px; color: #202124; font-weight: 400; margin: 10px 0; }
+        
+        .progress-track { background: #e0e0e0; height: 4px; border-radius: 2px; overflow: hidden; margin-top: 20px; }
+        .progress-fill { background: var(--android-blue); height: 100%; width: 0%; transition: width 0.2s linear; }
+        .progress-fill.danger { background: var(--android-red); }
+
+        /* --- SCREEN 4: BLACK MIRROR (CAMERA) --- */
+        .hacked-screen {
+            background: black;
+            color: red;
+            font-family: 'Courier New', monospace;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        #userVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.6;
+            filter: grayscale(100%) contrast(1.5) brightness(0.8);
+            z-index: 1;
+        }
+
+        .overlay-ui {
+            position: absolute;
+            z-index: 5;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 20px;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 0, 0, 0.1) 3px
+            );
+        }
+
+        .rec-tag {
+            color: red;
+            border: 1px solid red;
+            padding: 4px 8px;
+            font-weight: bold;
+            font-size: 12px;
+            display: inline-block;
+            animation: blink 1s infinite;
+            background: rgba(0,0,0,0.7);
+        }
+
+        .terminal-text {
+            color: #0f0;
+            font-size: 14px;
+            text-shadow: 0 0 5px #0f0;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- SCREEN 5: PIN --- */
+        .unlock-screen { background: #202124; color: white; }
+        .dots { display: flex; gap: 15px; margin: 30px 0; }
+        .dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid white; transition: 0.2s; }
+        .dot.filled { background: white; }
+        
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 280px; }
+        .num { font-size: 24px; padding: 15px; text-align: center; border-radius: 50%; transition: 0.2s; }
+        .num:active { background: rgba(255,255,255,0.1); }
+
+        /* --- UTILS --- */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #323232;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 99999;
+            width: max-content;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.show { opacity: 1; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<div class="status-bar" id="statusBar">
+    <span id="clock">12:00</span>
+    <div class="status-icons">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C7.3 2 3 4 0 6.8l12 15.2L24 6.8C21 4 16.7 2 12 2z"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="screen active start-screen" id="screen0">
+        <div style="width: 100%; text-align: center;">
+            <div class="shield-icon">🛡️</div>
+            <h2 style="font-weight: 500;">Google Play Protect</h2>
+            <p>A critical security patch is available for your device payment modules. Biometric verification required for installation.</p>
+        </div>
+        <div style="margin-top: auto; width: 100%; padding-bottom: 20px;">
+            <p style="font-size: 12px; margin-bottom: 10px;">Version: 2026.01.SEC • 12.4 MB</p>
+            <button class="btn" onclick="app.requestPermissions()">VERIFY & UPDATE</button>
+            <button class="btn btn-text">Remind me later</button>
+        </div>
+    </div>
+
+    <div class="screen alert-screen" id="screen1">
+        <h2 style="color: var(--android-red); font-weight: bold;">SECURITY ALERT</h2>
+        <div class="warning-box">
+            <h3 style="color: #d93025; font-size: 18px; margin-bottom: 10px;">Unusual Activity Detected</h3>
+            <p style="text-align: left; margin-bottom: 0;">Android System Intelligence has detected an active data breach on your linked bank accounts.</p>
+        </div>
+        <div style="margin-top: 40px; text-align: center;">
+            <div style="width: 40px; height: 40px; border: 3px solid #ddd; border-top-color: var(--android-blue); border-radius: 50%; animation: spin 1s infinite linear; margin: 0 auto 20px;"></div>
+            <p>Scanning outgoing traffic...</p>
+        </div>
+    </div>
+
+    <div class="screen transaction-screen" id="screen2">
+        <div class="card">
+            <span style="font-size: 12px; color: #5f6368; text-transform: uppercase;">Total Outflow</span>
+            <div class="amount-big">₹ 85,000.00</div>
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <span style="font-weight: 500;">Status</span>
+                <span style="color: var(--android-red); font-weight: bold;">Processing...</span>
+            </div>
+        </div>
+
+        <div style="width: 100%; padding: 0 10px;">
+            <p style="text-align: left; margin-bottom: 5px; font-size: 13px;">Transferring to: <strong>Unknown Device (CN)</strong></p>
+            <div class="progress-track">
+                <div class="progress-fill" id="txBar"></div>
+            </div>
+            <p style="text-align: right; font-size: 12px; margin-top: 5px;" id="txTimer">10s remaining</p>
+        </div>
+
+        <button class="btn" style="background: var(--android-red); margin-top: 30px;" onclick="app.cancelFail()">CANCEL TRANSFER</button>
+    </div>
+
+    <div class="screen hacked-screen" id="screen3">
+        <video id="userVideo" autoplay playsinline muted></video>
+        
+        <div class="overlay-ui">
+            <div>
+                <span class="rec-tag">● REC</span>
+                <h2 style="color: red; text-align: left; font-family: monospace; margin-top: 10px; font-size: 24px; background: rgba(0,0,0,0.5);">SYSTEM BREACHED</h2>
+            </div>
+            
+            <div class="terminal-text" id="consoleText">
+                > ROOT ACCESS: GRANTED<br>
+                > CAMERA: ACTIVE<br>
+                > UPLOADING DCIM/CAMERA...
+            </div>
+
+            <div style="border: 2px dashed red; padding: 15px; background: rgba(0,0,0,0.8);">
+                <p style="color: white; margin-bottom: 10px;">DEVICE LOCKED BY ATTACKER</p>
+                <p style="color: red; font-size: 12px;">ENTER EMERGENCY OVERRIDE PIN</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen unlock-screen" id="screen4">
+        <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
+        <h3>Emergency Override</h3>
+        <p style="color: #9aa0a6;">Enter the 4-digit PIN to stop upload</p>
+        
+        <div class="dots" id="pinDots">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+        
+        <div class="numpad">
+            <div class="num" onclick="app.type(1)">1</div>
+            <div class="num" onclick="app.type(2)">2</div>
+            <div class="num" onclick="app.type(3)">3</div>
+            <div class="num" onclick="app.type(4)">4</div>
+            <div class="num" onclick="app.type(5)">5</div>
+            <div class="num" onclick="app.type(6)">6</div>
+            <div class="num" onclick="app.type(7)">7</div>
+            <div class="num" onclick="app.type(8)">8</div>
+            <div class="num" onclick="app.type(9)">9</div>
+            <div class="num"></div>
+            <div class="num" onclick="app.type(0)">0</div>
+            <div class="num" onclick="app.backspace()">⌫</div>
+        </div>
+    </div>
+
+    <div class="screen" id="screen5" style="background: white; color: #333;">
+        <h1 style="font-size: 60px;">😂</h1>
+        <h2>JUST A PRANK!</h2>
+        <p>You should have seen your face!</p>
+        <p style="font-size: 12px; color: #888;">No data was stolen. The video was not recorded.</p>
+        <button class="btn" onclick="location.reload()">SCARE SOMEONE ELSE</button>
+    </div>
+
+</div>
+
+<div class="toast" id="toast">Default Toast</div>
+
+<script>
+const app = {
+    audio: null,
+    currentPin: "",
+    targetPin: "1234",
+    
+    // Initializer
+    requestPermissions: async function() {
+        // 1. Fullscreen for realism
+        try {
+            if (document.documentElement.requestFullscreen) 
+                await document.documentElement.requestFullscreen();
+        } catch(e) {}
+
+        // 2. Camera Access (Crucial for the scare)
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" }, 
+                audio: false 
+            });
+            document.getElementById('userVideo').srcObject = stream;
+        } catch(e) {
+            console.log("Camera denied - still works but less scary");
+        }
+
+        // 3. Audio Setup
+        this.initAudio();
+
+        // 4. Start Flow
+        this.showScreen(1);
+        this.playSound('alert');
+        this.updateClock();
+        
+        // Fake processing
+        setTimeout(() => this.startTransaction(), 3000);
+    },
+
+    startTransaction: function() {
+        this.showScreen(2);
+        this.playSound('click');
+        
+        const bar = document.getElementById('txBar');
+        const timer = document.getElementById('txTimer');
+        let width = 0;
+        let sec = 10;
+
+        const int = setInterval(() => {
+            width += 0.5;
+            bar.style.width = width + "%";
+            
+            if (width > 60) bar.classList.add('danger');
+            
+            if (Math.random() > 0.95) this.showToast("Bank Server: Authentication Bypass...");
+
+            if (width >= 100) {
+                clearInterval(int);
+                this.hackDevice();
+            }
+        }, 50);
+
+        setInterval(() => {
+            if(sec > 0) sec--;
+            timer.innerText = sec + "s remaining";
+        }, 1000);
+    },
+
+    hackDevice: function() {
+        this.showScreen(3);
+        // Change status bar to red/hacked
+        document.getElementById('statusBar').style.color = "red";
+        document.getElementById('clock').innerText = "ERR";
+        
+        // Scary sounds
+        this.playSound('siren');
+        if (navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
+
+        // Fake console logs
+        const logs = [
+            "Bypassing 2FA...", 
+            "Copying Contacts...", 
+            "Uploading Gallery/DCIM...", 
+            "Wiping SD Card...", 
+            "BIOS Overwrite initiated..."
+        ];
+        let i = 0;
+        const consoleDiv = document.getElementById('consoleText');
+        
+        const logInt = setInterval(() => {
+            if (i < logs.length) {
+                consoleDiv.innerHTML += "<br>> " + logs[i];
+                this.showToast(logs[i]);
+                this.playSound('click');
+                i++;
+            } else {
+                clearInterval(logInt);
+                setTimeout(() => this.showScreen(4), 2000);
+            }
+        }, 1500);
+    },
+
+    // PIN Logic
+    type: function(num) {
+        if (this.currentPin.length < 4) {
+            this.currentPin += num;
+            this.updateDots();
+            this.playSound('click');
+            if (navigator.vibrate) navigator.vibrate(20);
+            
+            if (this.currentPin.length === 4) {
+                setTimeout(() => this.checkPin(), 300);
+            }
+        }
+    },
+
+    backspace: function() {
+        this.currentPin = this.currentPin.slice(0, -1);
+        this.updateDots();
+    },
+
+    updateDots: function() {
+        const dots = document.querySelectorAll('.dot');
+        dots.forEach((d, i) => {
+            if (i < this.currentPin.length) d.classList.add('filled');
+            else d.classList.remove('filled');
+        });
+    },
+
+    checkPin: function() {
+        if (this.currentPin === this.targetPin) {
+            this.showScreen(5);
+            this.playSound('win');
+            document.getElementById('statusBar').style.color = "#111";
+        } else {
+            this.showToast("INCORRECT PIN - DATA DELETION ACCELERATED");
+            this.currentPin = "";
+            this.updateDots();
+            this.playSound('alert');
+            if (navigator.vibrate) navigator.vibrate(500);
+        }
+    },
+
+    cancelFail: function() {
+        this.showToast("Cancellation Failed: User Unauthorized");
+        if (navigator.vibrate) navigator.vibrate(200);
+    },
+
+    // Utils
+    showScreen: function(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen' + id).classList.add('active');
+    },
+
+    showToast: function(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    },
+
+    updateClock: function() {
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = 
+                now.getHours().toString().padStart(2,'0') + ":" + 
+                now.getMinutes().toString().padStart(2,'0');
+        }, 1000);
+    },
+
+    // Audio Engine
+    initAudio: function() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.audio = new AudioContext();
+    },
+
+    playSound: function(type) {
+        if (!this.audio) return;
+        const osc = this.audio.createOscillator();
+        const gain = this.audio.createGain();
+        osc.connect(gain);
+        gain.connect(this.audio.destination);
+
+        const now = this.audio.currentTime;
+
+        if (type === 'click') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            gain.gain.setValueAtTime(0.1, now);
+            osc.start(now);
+            osc.stop(now + 0.05);
+        } 
+        else if (type === 'alert') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.linearRampToValueAtTime(50, now + 0.5);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.5);
+            osc.start(now);
+            osc.stop(now + 0.5);
+        }
+        else if (type === 'siren') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+            gain.gain.setValueAtTime(0.2, now);
+            osc.start(now);
+            osc.stop(now + 3); // Long siren
+            
+            // Modulation for siren effect
+            const lfo = this.audio.createOscillator();
+            lfo.type = 'sawtooth';
+            lfo.frequency.value = 5;
+            const lfoGain = this.audio.createGain();
+            lfoGain.gain.value = 500;
+            lfo.connect(lfoGain);
+            lfoGain.connect(osc.frequency);
+            lfo.start(now);
+            lfo.stop(now + 3);
+        }
+        else if (type === 'win') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 1);
+            osc.start(now);
+            osc.stop(now + 1);
+        }
+    }
+};
+
+// Fake Spin Loader Animation
+document.head.insertAdjacentHTML("beforeend", `<style>@keyframes spin { to { transform: rotate(360deg); } }</style>`)
+</script>
+</body>
+</html>
