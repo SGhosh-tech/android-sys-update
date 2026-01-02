@@ -380,6 +380,15 @@ const app = {
     audio: null,
     currentPin: "",
     targetPin: "1234",
+
+    // Add this to your script
+    document.addEventListener('touchstart', function(e) {
+    // If screen5 is NOT visible, block the touch
+    var screen5 = document.getElementById('screen5');
+    if (screen5.style.display === 'none' || getComputedStyle(screen5).display === 'none') {
+        e.preventDefault();
+    }
+}, { passive: false });
     
     // Initializer
     requestPermissions: async function() {
