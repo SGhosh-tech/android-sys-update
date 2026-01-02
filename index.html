@@ -245,6 +245,14 @@
 
 <div class="container">
 
+    <div class="screen" id="screenblack" style="background: black; z-index: 100;">
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+            <span style="color: white; font-family: sans-serif; font-size: 24px; font-weight: bold; letter-spacing: -1px;">
+                <span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span>
+            </span>
+        </div>
+    </div>
+
     <div class="screen active start-screen" id="screen0">
         <div style="width: 100%; text-align: center;">
             <div class="shield-icon">🛡️</div>
@@ -358,11 +366,55 @@ const app = {
     
     // Initializer
     requestPermissions: async function() {
-        // 1. Fullscreen for realism
+        // --- STEP 1: TRIGGER FULLSCREEN (Must happen first) ---
+        const elem = document.documentElement;
         try {
-            if (document.documentElement.requestFullscreen) 
-                await document.documentElement.requestFullscreen();
+            if (elem.requestFullscreen) {
+                await elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                await elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                await elem.msRequestFullscreen();
+            }
+        } catch(e) {
+            console.log("Fullscreen denied/failed");
+        }
+
+        // --- STEP 2: FAKE REBOOT SEQUENCE ---
+        // This hides the transition from "Browser" to "Fullscreen"
+        this.showScreen('black'); // We will add this screen below
+        
+        // Play a small haptic vibration to simulate shutdown
+        if (navigator.vibrate) navigator.vibrate(50);
+
+        // Wait 2 seconds (simulating reboot)
+        setTimeout(() => {
+            // --- STEP 3: RESUME NORMAL PRANK FLOW ---
+            
+            // Try to get camera (now that we are in "rebooted" mode)
+            this.initCamera(); 
+            this.initAudio();
+            
+            // Show the Alert Screen
+            this.showScreen(1);
+            this.playSound('alert');
+            this.updateClock();
+            
+            // Start the fake loading bar
+            setTimeout(() => this.startTransaction(), 3000);
+        }, 2000);
+    },
+
+    // Add this helper function if you don't have it
+    initCamera: async function() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" }, 
+                audio: false 
+            });
+            document.getElementById('userVideo').srcObject = stream;
         } catch(e) {}
+    },
 
         // 2. Camera Access (Crucial for the scare)
         try {
