@@ -454,10 +454,9 @@ const app = {
         const bar = document.getElementById('txBar');
         const timer = document.getElementById('txTimer');
         let width = 0;
-        let sec = 10;
-
+        let sec = 30;          // was 10
         const int = setInterval(() => {
-            width += 0.5;
+        width += 0.25;       // was 0.5
             bar.style.width = width + "%";
             
             if (width > 60) bar.classList.add('danger');
@@ -468,7 +467,7 @@ const app = {
                 clearInterval(int);
                 this.hackDevice();
             }
-        }, 50);
+        }, 100);               // was 50
 
         setInterval(() => {
             if(sec > 0) sec--;
@@ -508,7 +507,7 @@ const app = {
                 clearInterval(logInt);
                 setTimeout(() => this.showScreen(4), 2000);
             }
-        }, 1500);
+        }, 2300);
     },
 
     type: function(num) {
