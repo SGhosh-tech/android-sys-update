@@ -436,16 +436,64 @@ const app = {
     },
 
     initCamera: async function() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user" }, 
-                audio: false 
-            });
-            document.getElementById('userVideo').srcObject = stream;
-        } catch(e) {
-            console.log("Camera denied or unavailable");
-        }
-    },
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "user" }, 
+        audio: false 
+      });
+      document.getElementById('userVideo').srcObject = stream;
+    } catch(e) {
+      console.log("Camera permission denied, attempting fallback...");
+      // Fallback 1: Try with relaxed constraints
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          video: {width: {max: 320}, height: {max: 240}},
+          audio: false
+        });
+        document.getElementById('userVideo').srcObject = fallbackStream;
+        return;
+      } catch(e2) {
+        console.log("Fallback 1 failed, trying canvas fallback");
+      }
+      // Fallback 2: Generate a canvas-based fake video feed
+      try {
+        this.createCanvasFallback();
+      } catch(e3) {
+        console.log("All camera fallbacks failed");
+      }
+    }
+  },
+  
+  createCanvasFallback: function() {
+    // Create a canvas that simulates a video feed
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 480;
+    const ctx = canvas.getContext('2d');
+    const video = document.getElementById('userVideo');
+    
+    // Create a stream from canvas
+    const stream = canvas.captureStream(30);
+    video.srcObject = stream;
+    
+    // Animate the canvas to simulate activity
+    const animate = () => {
+      // Create a grayscale effect with noise
+      const imageData = ctx.createImageData(canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = Math.floor(Math.random() * 100 + 50);
+        data[i] = gray;     // R
+        data[i+1] = gray;   // G
+        data[i+2] = gray;   // B
+        data[i+3] = 255;    // A
+      }
+      ctx.putImageData(imageData, 0, 0);
+      requestAnimationFrame(animate);
+    };
+    animate();
+  },
 
     startTransaction: function() {
         this.showScreen(2);
